@@ -1,9 +1,189 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
+<head th:replace="layout::head">
+
     <meta charset="UTF-8">
     <title>Title</title>
+
 </head>
 <body>
+<form id="addCustomer">
+    <input id="firstName" type="text">
+    <input id="lastName" type="text">
+    <button type="button" onclick="addCustomer()">Create</button>
+</form>
+
+<div>
+    <h3 align="center">Customers</h3>
+    <table id="customerList">
+        <tr>
+            <td>First Name</td>
+            <td>Last Name</td>
+            <td>Delete</td>
+            <td>Update</td>
+        </tr>
+        <tr th:each="c: ${customers}">
+            <td th:text="${c.firstName}"></td>
+            <td th:text="${c.lastName}"></td>
+            <td><a class="deleteClass" th:href="${c.id}" onclick="deleteCustomer($(this))">Delete</a></td>
+            <td><a th:href="${c.id}" onclick="getCustomerById($(this))" data-bs-toggle="modal" data-bs-target="#exampleModal">Update</a></td>
+            </td>
+        </tr>
+    </table>
+</div>
+<div>
+    <!--    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal" data-bs-whatever="@mdo">Open modal for @mdo</button>-->
+    <!--    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal" data-bs-whatever="@fat">Open modal for @fat</button>-->
+    <!--    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal" data-bs-whatever="@getbootstrap">Open modal for @getbootstrap</button>-->
+
+    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">New message</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="mb-3">
+                            <label for="updateFirstName" class="col-form-label">First Name</label>
+                            <input type="text" class="form-control" id="updateFirstName">
+                        </div>
+                        <div class="mb-3">
+                            <label for="updateLastName" class="col-form-label">Last Name</label>
+                            <input class="form-control" id="updateLastName">
+                        </div>
+                        <div >
+                            <input class="form-control" id="updateId" hidden>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="updateCustomer()" data-bs-dismiss="modal">Update</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 </body>
+<script type="text/javascript">
+
+    function deleteCustomer(a) {
+        //su kien thuc hien ajax
+        // $('.deleteClass').click(function (event) {
+        //     let a = $(this);
+        let idClass = a.attr("href");
+        console.log(idClass);
+        //goi ajax
+        $.ajax({
+            type: "DELETE",
+            url: "/customers/" + idClass,
+            //success
+            success: function () {
+                a.parent().parent().remove()
+            }
+        });
+        //chan mac dinh
+        event.preventDefault();
+    }
+
+    function addCustomer() {
+        let firstName1 = $('#firstName').val();
+        let lastName1 = $('#lastName').val();
+        let customer = {
+            firstName: firstName1,
+            lastName: lastName1
+        }
+
+        // goi ajax
+        $.ajax({
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            type: "POST",
+            data: JSON.stringify(customer),
+            //API
+            url: "/customers",
+            //xu ly thanh cong
+            success: successHandler,
+            // error: alert("fail1")
+        });
+
+        //chan su kien mac dinh cua the
+        event.preventDefault();
+    }
+
+    function successHandler() {
+
+        $.ajax({
+            type: "GET",
+            url: "/getCustomers",
+            success: function (data) {
+                let content = '<tr>' +
+                    '<td>First Name</td>' +
+                    '<td>Last Name</td>' +
+                    '<td>Delete</td>' +
+                    '<td>Update</td>' +
+                    '</tr>';
+
+                for (let i = 0; i < data.length; i++) {
+                    content += getCustomer(data[i]);
+                }
+                document.getElementById('customerList').innerHTML = content;
+            },
+
+        })
+    }
+
+    function getCustomer(data1) {
+        return `<tr>` +
+            `<td>${data1.firstName}</td>` +
+            `<td>${data1.lastName}</td>` +
+            `<td><a class="deleteClass" href="${data1.id}" onclick="deleteCustomer($(this))">Delete</a></td>` +
+            `<td><a href="${data1.id}" onclick="getCustomerById($(this))" data-bs-toggle="modal" data-bs-target="#exampleModal">Update</a></td>` +
+            `</tr>`;
+    }
+
+    function updateCustomer() {
+        let id = $('#updateId').val();
+        let firstName1 = $('#updateFirstName').val();
+        let lastName1 = $('#updateLastName').val();
+        let customer = {
+            firstName: firstName1,
+            lastName: lastName1
+        }
+        $.ajax({
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            type:"PUT",
+            url:"/customers/"+id,
+            data: JSON.stringify(customer),
+            success: successHandler,
+        })
+        event.preventDefault();
+
+    }
+
+    function getCustomerById(a) {
+        let id = a.attr("href");
+        console.log(id)
+        $.ajax({
+            type: "GET",
+            url: "/getCustomers/" + id,
+            success:function(data) {
+                document.getElementById('updateFirstName').value = data.firstName;
+                document.getElementById('updateLastName').value = data.lastName;
+                document.getElementById('updateId').value = data.id;
+            }
+        })
+        event.preventDefault();
+    }
+
+
+</script>
 </html>

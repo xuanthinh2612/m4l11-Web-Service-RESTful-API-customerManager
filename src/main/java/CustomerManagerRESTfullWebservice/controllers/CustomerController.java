@@ -7,8 +7,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
+
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.List;
@@ -19,13 +20,16 @@ public class CustomerController {
     @Autowired
     private ICustomerService customerService;
 
+    @GetMapping("/list")
+    public ModelAndView Customers() {
+        List<Customer> customers = customerService.findAll();
+        return new ModelAndView("index", "customers", customers);
+    }
+
     @GetMapping("/getCustomers")
     public ResponseEntity<List<Customer>> listAllCustomers() {
         List<Customer> customers = customerService.findAll();
-        if (customers.isEmpty()) {
-            return new ResponseEntity<List<Customer>>(HttpStatus.NO_CONTENT);//You many decide to return HttpStatus.NOT_FOUND
-        }
-        return new ResponseEntity<List<Customer>>(customers, HttpStatus.OK);
+        return new ResponseEntity<>(customers, HttpStatus.OK);
     }
 
     @GetMapping("/getCustomers/{id}")
@@ -55,7 +59,7 @@ public class CustomerController {
         } else {
             customer1.setFirstName(customer.getFirstName());
             customer1.setLastName(customer.getLastName());
-            customer1.setId(id);
+//            customer1.setId(id);
             customerService.save(customer1);
             return new ResponseEntity<Customer>(customer1, HttpStatus.OK);
 
@@ -74,5 +78,8 @@ public class CustomerController {
             return new ResponseEntity<Customer>(customer, HttpStatus.OK);
         }
     }
+//    public void removeCustomer(@PathVariable("id") Long id) {
+//        customerService.remove(id);
+//    }
 
 }
